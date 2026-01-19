@@ -33,6 +33,26 @@
     placeholder="Поиск по номеру или названию"
   />
 
+<button id="add-set-btn">➕ Добавить набор</button>
+
+<div id="add-set-form" class="hidden">
+  <input id="new-id" type="text" placeholder="ID набора">
+  <select id="new-series">
+    <option value="Marvel">Marvel</option>
+    <option value="BrickHeadz">BrickHeadz</option>
+  </select>
+  <input id="new-name" type="text" placeholder="Название набора">
+  <input id="new-minifigs" type="text" placeholder="Минифигурки через запятую">
+  <div id="drop-area">
+  <p>Перетащите изображение сюда или кликните</p>
+  <input type="file" id="fileElem" accept="image/*">
+  <img id="preview" src="" alt="" class="hidden">
+</div>
+
+  <button id="save-new-set">Сохранить</button>
+  <button onclick="closeAddForm()">Отмена</button>
+</div>
+
   <div id="catalog"></div>
 </div>
 
@@ -42,6 +62,21 @@
       <h2 id="modal-title"></h2>
       <div id="minifigs"></div>
     </div>
+
+<div id="add-minifig-form" class="hidden">
+  <input id="new-mf-id" type="text" placeholder="Артикул минифигурки (например sh789)">
+  <input id="new-mf-name" type="text" placeholder="Название минифигурки">
+
+  <div id="mf-drop-area">
+    <p>Перетащите фото минифигурки сюда или кликните</p>
+    <input type="file" id="mf-fileElem" accept="image/*">
+    <img id="mf-preview" src="" alt="" class="hidden">
+  </div>
+
+  <button id="save-new-mf" class="save-mf-btn">Сохранить минифигурку</button>
+  <button class="cancel-mf-btn" onclick="closeAddMinifigForm()">Отмена</button>
+</div>
+
   </div>
 
   <script src="app.js"></script>

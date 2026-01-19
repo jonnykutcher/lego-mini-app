@@ -143,3 +143,177 @@ button.status-wishlist.active {
   background: #6f8dd9;
   box-shadow: 0 0 10px rgba(0, 120, 255, 0.6);
 }
+
+#add-set-btn {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 12px;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: #ffc107;
+  color: white;
+}
+
+#add-set-form {
+  background: #fff8e1;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+#add-set-form input, #add-set-form select {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Картинки в карточках наборов */
+.card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+#drop-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+}
+
+#drop-area.hover { border-color: #007bff; }
+
+#drop-area img {
+  max-width: 100%;
+  max-height: 180px;
+  margin-top: 10px;
+  display: block;
+}
+
+.hidden { display: none; }
+
+button.delete-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: #dc3545;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 6px #dc3545;
+}
+
+.minifig-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.minifig-img {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+.minifig-img.placeholder {
+  background: #ddd;
+}
+
+.minifig-info {
+  flex: 1;
+}
+
+.minifig-code {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.minifig-name {
+  font-size: 15px;
+}
+
+.add-minifig-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+#add-minifig-form {
+  background: #f7f7f7;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+#add-minifig-form input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+#mf-drop-area {
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+#mf-drop-area.hover {
+  border-color: #007bff;
+}
+
+#mf-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 10px;
+  display: block;
+}
+
+.save-mf-btn, .cancel-mf-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.add-minifig-btn.inlist {
+  width: 100%;
+  margin: 0 0 12px 0;
+  display: block;
+}
+
+.add-minifig-tile {
+  width: 100%;
+  border: 2px dashed #bbb;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-weight: 600;
+}
