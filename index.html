@@ -9,8 +9,24 @@
 </head>
 <body>
 
-  <h1>🧱 LEGO Каталог</h1>
+  <h1>LEGO HOLD</h1>
 
+<!-- Стартовый экран -->
+<div id="start-screen">
+  <button class="series-btn" onclick="selectSeries('BrickHeadz')">
+    <img src="images/brickheadz.png" alt="images/BrickHeadz">
+    <span>BrickHeadz</span>
+  </button>
+
+  <button class="series-btn" onclick="selectSeries('Marvel')">
+    <img src="images/marvel.png" alt="Marvel">
+    <span>Marvel</span>
+  </button>
+</div>
+
+
+<!-- Каталог -->
+<div id="catalog-screen" class="hidden">
   <input
     id="search"
     type="text"
@@ -18,6 +34,7 @@
   />
 
   <div id="catalog"></div>
+</div>
 
   <div id="modal" class="hidden">
     <div class="modal-content">
