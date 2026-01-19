@@ -12,48 +12,21 @@ const LS_CUSTOM_SETS_KEY = "legoSetsCustom";  // user-added sets only
 const LS_MINIFIGS_KEY = "legoMinifigsCustom"; // overrides per set: { [setId]: [minifigs...] }
 
 // ===============================
-// Current UI state
+// State
 // ===============================
 let currentSeries = null;
 let currentOpenSetId = null;
 
 // ===============================
-// Base sets (built-in)
-// minifigs: [{id,name,image}]
-//
-// You can keep BASE_SETS minimal.
+// Base sets loaded from sets_raw.json
 // ===============================
-const BASE_SETS = [
-  {
-    id: "76218",
-    series: "Marvel",
-    name: "Sanctum Sanctorum",
-    image: "",
-    minifigs: [
-      { id: "sh789", name: "Doctor Strange", image: "" },
-      { id: "sh790", name: "Wong", image: "" }
-    ]
-  },
-  {
-    id: "41630",
-    series: "BrickHeadz",
-    name: "Jack Skellington & Sally",
-    image: "",
-    minifigs: []
-  }
-];
-
-// ===============================
-// Runtime sets (base + custom, no duplicates)
-// ===============================
+let BASE_SETS = [];
 let legoSets = [];
 
 // ===============================
-// Statuses + owned minifigs
-// data[setId] = { status: "new"|"used"|"wishlist", minifigs: { [figId]: true/false } }
+// Persistent data (statuses + owned minifigs)
 // ===============================
 const data = JSON.parse(localStorage.getItem(LS_DATA_KEY) || "{}");
-
 function saveData() {
   localStorage.setItem(LS_DATA_KEY, JSON.stringify(data));
 }
@@ -62,6 +35,19 @@ function saveData() {
 // Helpers
 // ===============================
 function $(id) { return document.getElementById(id); }
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeAttr(str) {
+  return String(str).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+}
 
 function normalizeMinifigs(minifigs) {
   if (!Array.isArray(minifigs)) return [];
@@ -78,20 +64,6 @@ function normalizeMinifigs(minifigs) {
   });
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-// for onclick attributes
-function escapeAttr(str) {
-  return String(str).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-}
-
 function slug(name) {
   return String(name)
     .trim()
@@ -99,6 +71,69 @@ function slug(name) {
     .replace(/[^a-z0-9а-яё]+/gi, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 50) || "fig";
+}
+
+// Собираем массив картинок набора из объекта image (Brickset API)
+function collectSetImages(rawImage) {
+  const images = [];
+  if (!rawImage || typeof rawImage !== "object") return images;
+
+  const main = rawImage.imageURL || rawImage.imageUrl;
+  const thumb = rawImage.thumbnailURL || rawImage.thumbnailUrl;
+
+  if (main) images.push(String(main));
+  if (thumb && thumb !== main) images.push(String(thumb));
+
+  if (Array.isArray(rawImage.additionalImages)) {
+    rawImage.additionalImages.forEach(u => {
+      if (!u) return;
+      const url = String(u);
+      if (!images.includes(url)) images.push(url);
+    });
+  }
+
+  return images;
+}
+
+// ===============================
+// Load sets_raw.json (Brickset API format)
+// ===============================
+async function loadBaseSetsFromSetsRaw() {
+  const res = await fetch("./sets_raw.json", { cache: "no-store" });
+  if (!res.ok) throw new Error("Не удалось загрузить sets_raw.json: " + res.status);
+
+  const raw = await res.json();
+
+  const themeToSeries = {
+    "BrickHeadz": "BrickHeadz",
+    "Marvel Super Heroes": "Marvel",
+  };
+
+  BASE_SETS = (Array.isArray(raw) ? raw : [])
+    .map(s => {
+      const num = String(s.number || "").trim();
+      const varNum = Number(s.numberVariant || 1) || 1;
+      if (!num) return null;
+
+      const id = `${num}-${varNum}`;
+      const theme = String(s.theme || "").trim();
+      const series = themeToSeries[theme] || theme || "Unknown";
+      const name = String(s.name || "").trim();
+
+      const imgObj = (s && typeof s === "object" ? s.image : null) || {};
+      const images = collectSetImages(imgObj);
+      const image = images[0] || ""; // fallback
+
+      return {
+        id,
+        series,
+        name,
+        images, // новый формат: массив картинок
+        image,  // старый формат: 1 картинка (на всякий)
+        minifigs: []
+      };
+    })
+    .filter(Boolean);
 }
 
 // ===============================
@@ -115,7 +150,6 @@ function saveCustomSets(arr) {
 
 // ===============================
 // Minifigs overrides storage
-// { [setId]: [ {id,name,image}, ... ] }
 // ===============================
 function loadMinifigsOverrides() {
   const obj = JSON.parse(localStorage.getItem(LS_MINIFIGS_KEY) || "{}");
@@ -151,6 +185,7 @@ function rebuildSets() {
       id: String(s.id),
       series: String(s.series),
       name: String(s.name),
+      images: Array.isArray(s.images) ? s.images : (s.image ? [s.image] : []),
       image: String(s.image || ""),
       minifigs: normalizeMinifigs(s.minifigs),
       _isCustom: false
@@ -158,7 +193,7 @@ function rebuildSets() {
     byId.set(set.id, set);
   }
 
-  // then custom (ignore duplicates)
+  // then custom
   for (const s of custom) {
     const id = String(s.id || "").trim();
     if (!id) continue;
@@ -168,6 +203,7 @@ function rebuildSets() {
       id,
       series: String(s.series || ""),
       name: String(s.name || ""),
+      images: Array.isArray(s.images) ? s.images : (s.image ? [s.image] : []),
       image: String(s.image || ""),
       minifigs: normalizeMinifigs(s.minifigs),
       _isCustom: true
@@ -177,8 +213,6 @@ function rebuildSets() {
 
   legoSets = Array.from(byId.values());
 }
-
-rebuildSets();
 
 // ===============================
 // Series selection
@@ -201,7 +235,10 @@ function render(filter = "") {
   const q = String(filter || "").trim().toLowerCase();
 
   legoSets
-    .filter(set => set.series === currentSeries)
+    .filter(set => {
+      if (currentSeries === "Marvel") return set.series === "Marvel" || set.series === "Marvel Super Heroes";
+      return set.series === currentSeries;
+    })
     .filter(set => !q || set.id.toLowerCase().includes(q) || set.name.toLowerCase().includes(q))
     .forEach(set => {
       const status = data[set.id]?.status || null;
@@ -209,8 +246,16 @@ function render(filter = "") {
       const card = document.createElement("div");
       card.className = "card";
 
-      const imageHTML = set.image
-        ? `<img src="${set.image}" alt="${escapeHtml(set.name)}">`
+      const imgs = Array.isArray(set.images) && set.images.length
+        ? set.images
+        : (set.image ? [set.image] : []);
+
+      const imageHTML = imgs.length
+        ? `
+          <div class="image-row">
+            ${imgs.map(url => `<img src="${url}" alt="${escapeHtml(set.name)}">`).join("")}
+          </div>
+        `
         : "";
 
       const deleteBtnHTML = set._isCustom
@@ -251,7 +296,7 @@ function setStatus(id, status) {
 }
 
 // ===============================
-// Modal (minifigs) - button is INSIDE list, at bottom
+// Modal (minifigs) - tile button at bottom
 // ===============================
 function renderAddMinifigTile(minifigsDiv) {
   const tile = document.createElement("button");
@@ -285,7 +330,7 @@ function openModal(id) {
 
   if (!figs.length) {
     const empty = document.createElement("div");
-    empty.innerHTML = `<em>В этом наборе нет минифигурок</em>`;
+    empty.innerHTML = `<em>Пока минифигурок нет (в sets_raw.json они не приходят). Можно добавить вручную ниже.</em>`;
     minifigsDiv.appendChild(empty);
   } else {
     figs.forEach(fig => {
@@ -316,15 +361,12 @@ function openModal(id) {
     });
   }
 
-  // Add tile at bottom (always)
   renderAddMinifigTile(minifigsDiv);
-
   modal.classList.remove("hidden");
 }
 
 function closeModal() {
   $("modal")?.classList.add("hidden");
-  // optional: hide minifig add form when closing modal
   closeAddMinifigForm();
 }
 
@@ -334,9 +376,6 @@ function toggleMinifig(setId, figId) {
   saveData();
 }
 
-// ===============================
-// Delete minifig from current set (overrides storage)
-// ===============================
 function deleteMinifig(figId) {
   if (!currentOpenSetId) return;
 
@@ -346,7 +385,6 @@ function deleteMinifig(figId) {
   const figs = getMinifigsForSet(set).filter(f => String(f.id) !== String(figId));
   setMinifigsForSet(currentOpenSetId, figs);
 
-  // remove owned mark if existed
   if (data[currentOpenSetId]?.minifigs?.[figId]) {
     delete data[currentOpenSetId].minifigs[figId];
     saveData();
@@ -367,18 +405,15 @@ function deleteSet(id) {
 
   if (!confirm(`Удалить набор ${id}?`)) return;
 
-  // remove from custom sets storage
   const custom = loadCustomSets().filter(s => String(s.id) !== id);
   saveCustomSets(custom);
 
-  // remove per-set minifigs overrides if existed
   const overrides = loadMinifigsOverrides();
   if (overrides[id]) {
     delete overrides[id];
     saveMinifigsOverrides(overrides);
   }
 
-  // remove status for set
   if (data[id]) {
     delete data[id];
     saveData();
@@ -414,7 +449,7 @@ function setupAddSetForm() {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      preview.src = reader.result; // base64
+      preview.src = reader.result;
       preview.classList.remove("hidden");
     };
     reader.readAsDataURL(file);
@@ -424,7 +459,6 @@ function setupAddSetForm() {
     addBtn.addEventListener("click", () => form.classList.remove("hidden"));
   }
 
-  // expose closeAddForm for HTML onclick
   window.closeAddForm = function closeAddForm() {
     form?.classList.add("hidden");
     clearPreview();
@@ -440,8 +474,7 @@ function setupAddSetForm() {
     dropArea.addEventListener("drop", e => {
       e.preventDefault();
       dropArea.classList.remove("hover");
-      const file = e.dataTransfer?.files?.[0];
-      handleFile(file);
+      handleFile(e.dataTransfer?.files?.[0]);
     });
     fileElem.addEventListener("change", e => handleFile(e.target?.files?.[0]));
   }
@@ -459,29 +492,22 @@ function setupAddSetForm() {
         return;
       }
 
-      // prevent duplicates
       if (legoSets.some(s => s.id === id)) {
         alert("Набор с таким ID уже существует.");
         return;
       }
 
-      // minifigs: comma separated names -> objects with generated id (can edit later)
       const minifigs = minifigsText
-        ? minifigsText.split(",")
-            .map(x => x.trim())
-            .filter(Boolean)
-            .map(n => ({ id: slug(n), name: n, image: "" }))
+        ? minifigsText.split(",").map(x => x.trim()).filter(Boolean).map(n => ({ id: slug(n), name: n, image: "" }))
         : [];
 
-      const newSet = { id, series, name, image, minifigs };
+      const newSet = { id, series, name, image, images: image ? [image] : [], minifigs };
 
       const custom = loadCustomSets();
       custom.push(newSet);
       saveCustomSets(custom);
 
-      // cleanup
       window.closeAddForm();
-
       rebuildSets();
       render($("search")?.value || "");
     });
@@ -489,7 +515,7 @@ function setupAddSetForm() {
 }
 
 // ===============================
-// Add minifig form + Drag&Drop image for MINIFIG (inside modal)
+// Add minifig form (inside modal) + Drag&Drop image for MINIFIG
 // ===============================
 function setupAddMinifigForm() {
   const form = $("add-minifig-form");
@@ -513,13 +539,12 @@ function setupAddMinifigForm() {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      preview.src = reader.result; // base64
+      preview.src = reader.result;
       preview.classList.remove("hidden");
     };
     reader.readAsDataURL(file);
   }
 
-  // expose closeAddMinifigForm for HTML onclick
   window.closeAddMinifigForm = function closeAddMinifigForm() {
     form?.classList.add("hidden");
     clearPreview();
@@ -534,8 +559,7 @@ function setupAddMinifigForm() {
     dropArea.addEventListener("drop", e => {
       e.preventDefault();
       dropArea.classList.remove("hover");
-      const file = e.dataTransfer?.files?.[0];
-      handleFile(file);
+      handleFile(e.dataTransfer?.files?.[0]);
     });
     fileElem.addEventListener("change", e => handleFile(e.target?.files?.[0]));
   }
@@ -567,10 +591,8 @@ function setupAddMinifigForm() {
       }
 
       figs.push({ id: mfId, name: mfName, image: mfImage });
-
       setMinifigsForSet(currentOpenSetId, figs);
 
-      // close and rerender modal
       window.closeAddMinifigForm();
       openModal(currentOpenSetId);
     });
@@ -578,7 +600,7 @@ function setupAddMinifigForm() {
 }
 
 // ===============================
-// Search binding
+// Search
 // ===============================
 function setupSearch() {
   const search = $("search");
@@ -596,10 +618,24 @@ window.closeModal = closeModal;
 window.toggleMinifig = toggleMinifig;
 window.deleteSet = deleteSet;
 window.deleteMinifig = deleteMinifig;
+window.closeAddMinifigForm = window.closeAddMinifigForm || function(){};
+window.closeAddForm = window.closeAddForm || function(){};
 
 // ===============================
 // Init
 // ===============================
-setupSearch();
-setupAddSetForm();
-setupAddMinifigForm();
+async function initApp() {
+  try {
+    await loadBaseSetsFromSetsRaw();
+  } catch (e) {
+    console.error(e);
+    BASE_SETS = [];
+  }
+
+  rebuildSets();
+  setupSearch();
+  setupAddSetForm();
+  setupAddMinifigForm();
+}
+
+document.addEventListener("DOMContentLoaded", initApp);

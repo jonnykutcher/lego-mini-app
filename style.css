@@ -317,3 +317,42 @@ button.delete-btn {
   margin-top: 12px;
   font-weight: 600;
 }
+.image-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scroll-snap-type: x mandatory;
+}
+
+.image-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.image-row::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.image-row img {
+  height: 180px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: #f3f3f3;
+}
+.image-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scroll-snap-type: x mandatory;
+}
+
+.image-row img {
+  height: 180px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: #f3f3f3;
+}
