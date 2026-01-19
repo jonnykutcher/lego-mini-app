@@ -1,0 +1,59 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #f3f3f3;
+  margin: 0;
+  padding: 16px;
+}
+
+h1 {
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.buttons button {
+  margin-right: 8px;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+#modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: white;
+  margin: 10% auto;
+  padding: 16px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.close {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 18px;
+}

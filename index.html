@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>LEGO Каталог</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>🧱 LEGO Каталог</h1>
+
+  <input
+    id="search"
+    type="text"
+    placeholder="Поиск по номеру или названию"
+  />
+
+  <div id="catalog"></div>
+
+  <div id="modal" class="hidden">
+    <div class="modal-content">
+      <button class="close" onclick="closeModal()">✖</button>
+      <h2 id="modal-title"></h2>
+      <div id="minifigs"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
